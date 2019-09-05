@@ -11,9 +11,11 @@
 #include <km_common/km_log.h>
 #include <km_common/km_string.h>
 #include <opengl.h>
+#ifdef APP_315K
+#include <win32_arduino.h>
+#endif
 
 #include "win32_audio.h"
-
 
 // TODO
 // - WINDOWS 7 VIRTUAL MACHINE
@@ -26,7 +28,6 @@
 // - WM_SETCURSOR (control cursor visibility)
 // - QueryCancelAutoplay
 // - WM_ACTIVATEAPP (for when we are not the active app)
-
 
 #define START_WIDTH 1280
 #define START_HEIGHT 720
@@ -350,21 +351,21 @@ PLATFORM_FLUSH_LOGS_FUNC(FlushLogs)
 	// uint64 toRead1, toRead2;
 	// if (logState->readIndex <= logState->writeIndex) {
 	// 	toRead1 = logState->writeIndex - logState->readIndex;
-	// 	toRead2 = 0;
+	//  toRead2 = 0;
 	// }
 	// else {
-	// 	toRead1 = LOG_BUFFER_SIZE - logState->readIndex;
-	// 	toRead2 = logState->writeIndex;
+	//  toRead1 = LOG_BUFFER_SIZE - logState->readIndex;
+	//  toRead2 = logState->writeIndex;
 	// }
 	// if (toRead1 != 0) {
-	// 	LogString(logState->buffer + logState->readIndex, toRead1);
+	//  LogString(logState->buffer + logState->readIndex, toRead1);
 	// }
 	// if (toRead2 != 0) {
-	// 	LogString(logState->buffer, toRead2);
+	//  LogString(logState->buffer, toRead2);
 	// }
 	// logState->readIndex += toRead1 + toRead2;
 	// if (logState->readIndex >= LOG_BUFFER_SIZE) {
-	// 	logState->readIndex -= LOG_BUFFER_SIZE;
+	//  logState->readIndex -= LOG_BUFFER_SIZE;
 	// }
 }
 
@@ -519,8 +520,8 @@ internal void Win32ProcessMessages(
 		} break;
 		case WM_KEYDOWN: {
 			uint32 vkCode = (uint32)msg.wParam;
-			bool32 wasDown = ((msg.lParam & (1 << 30)) != 0);
-			bool32 isDown = ((msg.lParam & (1 << 31)) == 0);
+			bool wasDown = ((msg.lParam & (1 << 30)) != 0);
+			bool isDown = ((msg.lParam & (1 << 31)) == 0);
 			int transitions = (wasDown != isDown) ? 1 : 0;
 			DEBUG_ASSERT(isDown);
 
@@ -545,8 +546,8 @@ internal void Win32ProcessMessages(
 		} break;
 		case WM_KEYUP: {
 			uint32 vkCode = (uint32)msg.wParam;
-			bool32 wasDown = ((msg.lParam & (1 << 30)) != 0);
-			bool32 isDown = ((msg.lParam & (1 << 31)) == 0);
+			bool wasDown = ((msg.lParam & (1 << 30)) != 0);
+			bool isDown = ((msg.lParam & (1 << 31)) == 0);
 			int transitions = (wasDown != isDown) ? 1 : 0;
 			DEBUG_ASSERT(!isDown);
 
@@ -1002,7 +1003,7 @@ int CALLBACK WinMain(
 	//gameAudio.channels = winAudio.channels;
 	gameAudio.channels = 2;
 	gameAudio.bufferSizeSamples = winAudio.bufferSizeSamples;
-	int bufferSizeBytes = gameAudio.bufferSizeSamples
+	uint64 bufferSizeBytes = gameAudio.bufferSizeSamples
 		* gameAudio.channels * sizeof(float32);
 	gameAudio.buffer = (float32*)VirtualAlloc(0, (size_t)bufferSizeBytes,
 		MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
@@ -1081,15 +1082,30 @@ int CALLBACK WinMain(
 		MAX_PATH, dllTempName);
 
 	char gameCodeDLLPath[MAX_PATH];
-	Win32BuildExePathFileName(&state, dllName,
-		MAX_PATH, gameCodeDLLPath);
+	Win32BuildExePathFileName(&state, dllName, MAX_PATH, gameCodeDLLPath);
 	char tempCodeDLLPath[MAX_PATH];
-	Win32BuildExePathFileName(&state, dllTempName,
-		MAX_PATH, tempCodeDLLPath);
+	Win32BuildExePathFileName(&state, dllTempName, MAX_PATH, tempCodeDLLPath);
 
 	GameInput input[2] = {};
 	GameInput *newInput = &input[0];
 	GameInput *oldInput = &input[1];
+
+#ifdef GAME_315K
+	Win32Arduino arduino;
+	bool arduinoConnected = arduino.Init(Win32Arduino::ARDUINO_PORT_NAME);
+	if (!arduinoConnected) {
+		LOG_ERROR("Win32 arduino init failed\n");
+	}
+	else {
+		LOG_ERROR("Initialized Win32 arduino controller\n");
+		for (int c = 0; c < ARDUINO_CHANNELS; c++) {
+			for (int i = 0; i < ARDUINO_ANALOG_INPUTS; i++) {
+				input[0].arduinoIn.analogValues[c][i] = 0.0f;
+				input[1].arduinoIn.analogValues[c][i] = 0.0f;
+			}
+		}
+	}
+#endif
 
 	// Initialize timing information
 	int64 timerFreq;
@@ -1107,8 +1123,7 @@ int CALLBACK WinMain(
 	QueryPerformanceCounter(&timerLast);
 	uint64 cyclesLast = __rdtsc();
 
-	Win32GameCode gameCode =
-		Win32LoadGameCode(gameCodeDLLPath, tempCodeDLLPath);
+	Win32GameCode gameCode = Win32LoadGameCode(gameCodeDLLPath, tempCodeDLLPath);
 
 	FlushLogs(logState);
 	running_ = true;
@@ -1150,6 +1165,15 @@ int CALLBACK WinMain(
 			winAudio.midiIn.numMessages = 0;
 			winAudio.midiInBusy = false;
 		}
+
+#ifdef APP_315K
+		// Arduino controller input
+		if (arduinoConnected) {
+			MemCopy(&newInput->arduinoIn, &oldInput->arduinoIn, sizeof(ArduinoInput));
+			newInput->arduinoIn.connected = true;
+			arduino.UpdateInput(&newInput->arduinoIn);
+		}
+#endif
 
 		DWORD maxControllerCount = XUSER_MAX_COUNT;
 		if (maxControllerCount > ARRAY_COUNT(newInput->controllers)) {
@@ -1300,11 +1324,11 @@ int CALLBACK WinMain(
 		HRESULT hr = winAudio.audioClient->GetCurrentPadding(&audioPadding);
 		// TODO check for invalid device and stuff
 		if (SUCCEEDED(hr)) {
-			int samplesQueued = (int)audioPadding;
+			uint64 samplesQueued = audioPadding;
 			if (samplesQueued < winAudio.latency) {
 				// Write enough samples so that the number of queued samples
 				// is enough for one latency interval
-				int samplesToWrite = winAudio.latency - samplesQueued;
+				uint64 samplesToWrite = winAudio.latency - samplesQueued;
 				if (samplesToWrite > gameAudio.fillLength) {
 					// Don't write more samples than the game generated
 					samplesToWrite = gameAudio.fillLength;
@@ -1341,6 +1365,9 @@ int CALLBACK WinMain(
 
 #include "win32_audio.cpp"
 
+#ifdef APP_315K
+#include <win32_arduino.cpp>
+#endif
 // TODO temporary! this is a bad idea! already compiled in main.cpp
 #include <km_common/km_input.cpp>
 #include <km_common/km_string.cpp>

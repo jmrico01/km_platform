@@ -1,13 +1,19 @@
 #pragma once
 
+#include <app_info.h>
 #include <km_common/km_defines.h>
 #include <km_common/km_input.h>
 #include <km_common/km_log.h>
 #include <km_common/km_math.h>
-
 #include <opengl.h>
 
-#define MIDI_IN_QUEUE_SIZE 256
+#define MIDI_IN_QUEUE_SIZE 1024
+
+#ifdef APP_315K
+#define ARDUINO_CHANNELS 4
+#define ARDUINO_ANALOG_INPUTS  6
+#define ARDUINO_DIGITAL_INPUTS 1
+#endif
 
 struct ThreadContext
 {
@@ -34,8 +40,6 @@ typedef DEBUG_PLATFORM_READ_FILE_FUNC(DEBUGPlatformReadFileFunc);
 		uint64 memorySize, const void* memory, bool overwrite)
 typedef DEBUG_PLATFORM_WRITE_FILE_FUNC(DEBUGPlatformWriteFileFunc);
 
-//#endif
-
 #define MAX_KEYS_PER_FRAME 256
 
 struct ScreenInfo
@@ -53,12 +57,12 @@ struct ScreenInfo
 struct GameButtonState
 {
 	int transitions;
-	bool32 isDown;
+	bool isDown;
 };
 
 struct GameControllerInput
 {
-	bool32 isConnected;
+	bool isConnected;
 
 	Vec2 leftStart;
 	Vec2 leftEnd;
@@ -93,6 +97,17 @@ struct MidiInput
 	MidiMessage messages[MIDI_IN_QUEUE_SIZE];
 };
 
+#ifdef APP_315K
+struct ArduinoInput
+{
+	bool connected;
+
+	uint8 activeChannel;
+	GameButtonState pedal;
+	float32 analogValues[ARDUINO_CHANNELS][ARDUINO_ANALOG_INPUTS];
+};
+#endif
+
 struct GameInput
 {
 	GameButtonState mouseButtons[5];
@@ -108,17 +123,20 @@ struct GameInput
 	GameControllerInput controllers[4];
 
 	MidiInput midiIn;
+#ifdef APP_315K
+	ArduinoInput arduinoIn;
+#endif
 };
 
 struct GameAudio
 {
-	int sampleRate;
-	int channels;
-	int bufferSizeSamples;
+	uint32 sampleRate;
+	uint8 channels;
+	uint64 bufferSizeSamples;
 	float32* buffer;
 
-	int sampleDelta; // Samples elapsed/written since last update
-	int fillLength;
+	uint64 sampleDelta; // Samples elapsed/written since last update
+	uint64 fillLength;
 };
 
 struct PlatformFunctions
