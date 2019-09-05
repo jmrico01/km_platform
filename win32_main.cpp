@@ -1090,7 +1090,7 @@ int CALLBACK WinMain(
 	GameInput *newInput = &input[0];
 	GameInput *oldInput = &input[1];
 
-#ifdef GAME_315K
+#ifdef APP_315K
 	Win32Arduino arduino;
 	bool arduinoConnected = arduino.Init(Win32Arduino::ARDUINO_PORT_NAME);
 	if (!arduinoConnected) {
