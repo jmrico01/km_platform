@@ -1023,8 +1023,8 @@ int CALLBACK WinMain(
 	GameMemory gameMemory = {};
 	gameMemory.shouldInitGlobalVariables = true;
 
-	gameMemory.permanent.size = MEGABYTES(64);
-	gameMemory.transient.size = GIGABYTES(2);
+	gameMemory.permanent.size = PERMANENT_MEMORY_SIZE;
+	gameMemory.transient.size = TRANSIENT_MEMORY_SIZE;
 
 	// TODO Look into using large virtual pages for this
 	// potentially big allocation
