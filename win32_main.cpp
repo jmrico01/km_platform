@@ -331,22 +331,22 @@ PLATFORM_FLUSH_LOGS_FUNC(FlushLogs)
 	for (uint64 i = 0; i < logState->eventCount; i++) {
 		uint64 eventIndex = (logState->eventFirst + i) % LOG_EVENTS_MAX;
 		const LogEvent& event = logState->logEvents[eventIndex];
-        uint64 bufferStart = event.logStart;
-        uint64 bufferEnd = event.logStart + event.logSize;
-        if (bufferEnd >= LOG_BUFFER_SIZE) {
-            bufferEnd -= LOG_BUFFER_SIZE;
-        }
-        if (bufferEnd >= bufferStart) {
-            LogString(logState->buffer + bufferStart, event.logSize);
-        }
-        else {
-            LogString(logState->buffer + bufferStart, LOG_BUFFER_SIZE - bufferStart);
-            LogString(logState->buffer, bufferEnd);
-        }
+		uint64 bufferStart = event.logStart;
+		uint64 bufferEnd = event.logStart + event.logSize;
+		if (bufferEnd >= LOG_BUFFER_SIZE) {
+			bufferEnd -= LOG_BUFFER_SIZE;
+		}
+		if (bufferEnd >= bufferStart) {
+			LogString(logState->buffer + bufferStart, event.logSize);
+		}
+		else {
+			LogString(logState->buffer + bufferStart, LOG_BUFFER_SIZE - bufferStart);
+			LogString(logState->buffer, bufferEnd);
+		}
 	}
 
-    logState->eventFirst = (logState->eventFirst + logState->eventCount) % LOG_EVENTS_MAX;
-    logState->eventCount = 0;
+	logState->eventFirst = (logState->eventFirst + logState->eventCount) % LOG_EVENTS_MAX;
+	logState->eventCount = 0;
 	// uint64 toRead1, toRead2;
 	// if (logState->readIndex <= logState->writeIndex) {
 	// 	toRead1 = logState->writeIndex - logState->readIndex;
