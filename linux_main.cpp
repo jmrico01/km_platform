@@ -15,7 +15,6 @@
 //#include <alloca.h>       // alloca
 
 #include <stdarg.h>
-#include <stdio.h>
 
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>

@@ -1,6 +1,5 @@
 #include "win32_main.h"
 
-#include <stdio.h>
 #include <stdarg.h>
 #include <Xinput.h>
 #include <intrin.h> // __rdtsc
@@ -11,6 +10,8 @@
 #include <km_common/km_log.h>
 #include <km_common/km_string.h>
 #include <opengl.h>
+#undef STB_SPRINTF_IMPLEMENTATION
+#include <stb_sprintf.h>
 #ifdef APP_315K
 #include <win32_arduino.h>
 #endif
@@ -166,8 +167,7 @@ internal void Win32GetInputFileLocation(
 	int slotIndex, int destCount, char* dest)
 {
 	char temp[64];
-	wsprintf(temp, "recording_%d_%s.kmi",
-		slotIndex, inputStream ? "input" : "state");
+	stbsp_snprintf(temp, 64, "recording_%d_%s.kmi", slotIndex, inputStream ? "input" : "state");
 	Win32BuildExePathFileName(state, temp, destCount, dest);
 }
 
@@ -908,7 +908,7 @@ int CALLBACK WinMain(
 	logFilePath_.Init();
 	SYSTEMTIME systemTime;
 	GetLocalTime(&systemTime);
-	int n = snprintf(logFilePath_.array.data, MAX_PATH,
+	int n = stbsp_snprintf(logFilePath_.array.data, MAX_PATH,
 		"logs/log%04d-%02d-%02d_%02d-%02d-%02d.txt",
 		systemTime.wYear, systemTime.wMonth, systemTime.wDay,
 		systemTime.wHour, systemTime.wMinute, systemTime.wSecond);
@@ -1365,11 +1365,13 @@ int CALLBACK WinMain(
 
 #include "win32_audio.cpp"
 
-#ifdef APP_315K
-#include <win32_arduino.cpp>
-#endif
 // TODO temporary! this is a bad idea! already compiled in main.cpp
 #include <km_common/km_input.cpp>
 #include <km_common/km_string.cpp>
 #include <km_common/km_lib.cpp>
 #include <km_common/km_log.cpp>
+#define STB_SPRINTF_IMPLEMENTATION
+#include <stb_sprintf.h>
+#ifdef APP_315K
+#include <win32_arduino.cpp>
+#endif
