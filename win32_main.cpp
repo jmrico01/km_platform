@@ -7,6 +7,7 @@
 #include <app_info.h>
 #include <km_common/km_debug.h>
 #include <km_common/km_input.h>
+#include <km_common/km_lib.h>
 #include <km_common/km_log.h>
 #include <km_common/km_string.h>
 #include <opengl.h>
@@ -35,7 +36,7 @@
 
 // TODO this is a global for now
 global_var char pathToApp_[MAX_PATH];
-global_var bool32 running_ = true;
+global_var bool running_ = true;
 global_var GameInput* input_ = nullptr;             // for WndProc WM_CHAR
 global_var glViewportFunc* glViewport_ = nullptr;   // for WndProc WM_SIZE
 global_var ScreenInfo* screenInfo_ = nullptr;       // for WndProc WM_SIZE
@@ -163,7 +164,7 @@ internal void Win32BuildExePathFileName(Win32State* state,
 }
 
 internal void Win32GetInputFileLocation(
-	Win32State* state, bool32 inputStream,
+	Win32State* state, bool inputStream,
 	int slotIndex, int destCount, char* dest)
 {
 	char temp[64];
@@ -182,40 +183,6 @@ inline FILETIME Win32GetLastWriteTime(char* fileName)
 	return data.ftLastWriteTime;
 }
 
-internal Win32GameCode Win32LoadGameCode(
-	char* gameCodeDLLPath, char* tempCodeDLLPath)
-{
-	Win32GameCode result = {};
-	result.isValid = false;
-
-	result.lastDLLWriteTime = Win32GetLastWriteTime(gameCodeDLLPath);
-	CopyFile(gameCodeDLLPath, tempCodeDLLPath, FALSE);
-	result.gameCodeDLL = LoadLibrary(tempCodeDLLPath);
-	if (result.gameCodeDLL) {
-		result.gameUpdateAndRender =
-			(GameUpdateAndRenderFunc*)GetProcAddress(result.gameCodeDLL, "GameUpdateAndRender");
-
-		result.isValid = result.gameUpdateAndRender != 0;
-	}
-
-	if (!result.isValid) {
-		result.gameUpdateAndRender = 0;
-	}
-
-	return result;
-}
-
-internal void Win32UnloadGameCode(Win32GameCode* gameCode)
-{
-	if (gameCode->gameCodeDLL) {
-		FreeLibrary(gameCode->gameCodeDLL);
-	}
-
-	gameCode->gameCodeDLL = NULL;
-	gameCode->isValid = false;
-	gameCode->gameUpdateAndRender = 0;
-}
-
 internal inline uint32 SafeTruncateUInt64(uint64 value)
 {
 	// TODO defines for maximum values
@@ -224,16 +191,9 @@ internal inline uint32 SafeTruncateUInt64(uint64 value)
 	return result;
 }
 
-//#if GAME_INTERNAL
-
-DEBUG_PLATFORM_FREE_FILE_MEMORY_FUNC(DEBUGPlatformFreeFileMemory)
-{
-	if (file->data) {
-		VirtualFree(file->data, 0, MEM_RELEASE);
-	}
-}
-
-DEBUG_PLATFORM_READ_FILE_FUNC(DEBUGPlatformReadFile)
+template <typename Allocator>
+DEBUGReadFileResult DEBUGPlatformReadFile(const ThreadContext* thread, Allocator* allocator,
+	const char* fileName)
 {
 	DEBUGReadFileResult result = {};
 	
@@ -255,18 +215,16 @@ DEBUG_PLATFORM_READ_FILE_FUNC(DEBUGPlatformReadFile)
 	}
 
 	uint32 fileSize32 = SafeTruncateUInt64(fileSize.QuadPart);
-	result.data = VirtualAlloc(0, fileSize32,
-		MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+	result.data = allocator->Allocate(fileSize32);
 	if (!result.data) {
 		// TODO log
 		return result;
 	}
 
 	DWORD bytesRead;
-	if (!ReadFile(hFile, result.data, fileSize32, &bytesRead, NULL) ||
-	fileSize32 != bytesRead) {
+	if (!ReadFile(hFile, result.data, fileSize32, &bytesRead, NULL) || fileSize32 != bytesRead) {
 		// TODO log
-		DEBUGPlatformFreeFileMemory(thread, &result);
+		allocator->Free(&result.data);
 		return result;
 	}
 
@@ -275,7 +233,16 @@ DEBUG_PLATFORM_READ_FILE_FUNC(DEBUGPlatformReadFile)
 	return result;
 }
 
-DEBUG_PLATFORM_WRITE_FILE_FUNC(DEBUGPlatformWriteFile)
+template <typename Allocator>
+void DEBUGPlatformFreeFile(const ThreadContext* thread, Allocator* allocator,
+	DEBUGReadFileResult* file)
+{
+	DEBUG_ASSERT(file->data != nullptr);
+	allocator->Free(file->data);
+}
+
+bool DEBUGPlatformWriteFile(const ThreadContext* thread, const char* fileName,
+	uint64 memorySize, const void* memory, bool overwrite)
 {
 	HANDLE hFile = CreateFile(fileName, GENERIC_WRITE, NULL,
 		NULL, OPEN_ALWAYS, NULL, NULL);
@@ -301,7 +268,12 @@ DEBUG_PLATFORM_WRITE_FILE_FUNC(DEBUGPlatformWriteFile)
 	return bytesWritten == memorySize;
 }
 
-//#endif
+bool DEBUGPlatformFileChanged(const ThreadContext* thread, const char* fileName)
+{
+	// TODO implement this
+	static FILETIME lastWriteTime;
+	return false;
+}
 
 void LogString(const char* string, uint64 n)
 {
@@ -510,7 +482,7 @@ internal void Win32ProcessMessages(
 
 		case WM_SYSKEYDOWN: {
 			uint32 vkCode = (uint32)msg.wParam;
-			bool32 altDown = (msg.lParam & (1 << 29));
+			bool altDown = (msg.lParam & (1 << 29)) != 0;
 
 			if (vkCode == VK_F4 && altDown) {
 				running_ = false;
@@ -726,8 +698,7 @@ internal bool Win32LoadBaseGLFunctions(
 	return true;
 }
 
-internal bool Win32LoadAllGLFunctions(
-	OpenGLFunctions* glFuncs, const HMODULE& oglLib)
+internal bool Win32LoadAllGLFunctions(OpenGLFunctions* glFuncs, const HMODULE& oglLib)
 {
 	// Generate function loading code
 #define FUNC(returntype, name, ...) LOAD_GL_FUNCTION(name);
@@ -737,8 +708,7 @@ internal bool Win32LoadAllGLFunctions(
 	return true;
 }
 
-internal bool Win32InitOpenGL(OpenGLFunctions* glFuncs,
-	int width, int height)
+internal bool Win32InitOpenGL(OpenGLFunctions* glFuncs, int width, int height)
 {
 	HMODULE oglLib = LoadLibrary("opengl32.dll");
 	if (!oglLib) {
@@ -967,13 +937,9 @@ int CALLBACK WinMain(
 
 	PlatformFunctions platformFuncs = {};
 	platformFuncs.flushLogs = FlushLogs;
-	platformFuncs.DEBUGPlatformFreeFileMemory = DEBUGPlatformFreeFileMemory;
-	platformFuncs.DEBUGPlatformReadFile = DEBUGPlatformReadFile;
-	platformFuncs.DEBUGPlatformWriteFile = DEBUGPlatformWriteFile;
 
 	// Initialize OpenGL
-	if (!Win32InitOpenGL(&platformFuncs.glFunctions,
-	screenInfo.size.x, screenInfo.size.y)) {
+	if (!Win32InitOpenGL(&platformFuncs.glFunctions, screenInfo.size.x, screenInfo.size.y)) {
 		LOG_ERROR("Win32 OpenGL init failed\n");
 		FlushLogs(logState);
 		return 1;
@@ -1074,18 +1040,6 @@ int CALLBACK WinMain(
 #endif
 #endif
 
-	char dllName[MAX_PATH];
-	CatStrings(StringLength(APP_NAME), APP_NAME, StringLength("_game.dll"), "_game.dll",
-		MAX_PATH, dllName);
-	char dllTempName[MAX_PATH];
-	CatStrings(StringLength(APP_NAME), APP_NAME, StringLength("_game_temp.dll"), "_game_temp.dll",
-		MAX_PATH, dllTempName);
-
-	char gameCodeDLLPath[MAX_PATH];
-	Win32BuildExePathFileName(&state, dllName, MAX_PATH, gameCodeDLLPath);
-	char tempCodeDLLPath[MAX_PATH];
-	Win32BuildExePathFileName(&state, dllTempName, MAX_PATH, tempCodeDLLPath);
-
 	GameInput input[2] = {};
 	GameInput *newInput = &input[0];
 	GameInput *oldInput = &input[1];
@@ -1123,20 +1077,9 @@ int CALLBACK WinMain(
 	QueryPerformanceCounter(&timerLast);
 	uint64 cyclesLast = __rdtsc();
 
-	Win32GameCode gameCode = Win32LoadGameCode(gameCodeDLLPath, tempCodeDLLPath);
-
 	FlushLogs(logState);
 	running_ = true;
 	while (running_) {
-		// TODO this gets called twice very quickly in succession
-		FILETIME newDLLWriteTime = Win32GetLastWriteTime(gameCodeDLLPath);
-		if (CompareFileTime(&newDLLWriteTime,
-		&gameCode.lastDLLWriteTime) > 0) {
-			Win32UnloadGameCode(&gameCode);
-			gameCode = Win32LoadGameCode(gameCodeDLLPath, tempCodeDLLPath);
-			gameMemory.shouldInitGlobalVariables = true;
-		}
-
 		// Process keyboard input & other messages
 		int mouseWheelPrev = newInput->mouseWheel;
 		Win32ProcessMessages(hWnd, newInput, &platformFuncs.glFunctions);
@@ -1308,17 +1251,13 @@ int CALLBACK WinMain(
 		LOG_INFO("sound time sync offset (real minus sound): %f\n",
 			totalElapsedTime - totalElapsedSound);*/
 
-		if (gameCode.gameUpdateAndRender) {
-			ThreadContext thread = {};
-			gameAudio.fillLength = winAudio.latency;
-			gameCode.gameUpdateAndRender(&thread, &platformFuncs,
-				newInput, screenInfo, elapsed,
-				&gameMemory, &gameAudio, logState);
-			screenInfo.changed = false;
-		}
-		else {
-			gameAudio.fillLength = 0;
-		}
+		ThreadContext thread = {};
+		gameAudio.fillLength = winAudio.latency;
+		// TODO this
+		GameUpdateAndRender(&thread, &platformFuncs,
+			newInput, screenInfo, elapsed,
+			&gameMemory, &gameAudio, logState);
+		screenInfo.changed = false;
 
 		UINT32 audioPadding;
 		HRESULT hr = winAudio.audioClient->GetCurrentPadding(&audioPadding);
@@ -1362,16 +1301,3 @@ int CALLBACK WinMain(
 
 	return 0;
 }
-
-#include "win32_audio.cpp"
-
-// TODO temporary! this is a bad idea! already compiled in main.cpp
-#include <km_common/km_input.cpp>
-#include <km_common/km_string.cpp>
-#include <km_common/km_lib.cpp>
-#include <km_common/km_log.cpp>
-#define STB_SPRINTF_IMPLEMENTATION
-#include <stb_sprintf.h>
-#ifdef APP_315K
-#include <win32_arduino.cpp>
-#endif

@@ -20,31 +20,27 @@ struct ThreadContext
 	int placeholder;
 };
 
-// ---------------------------- Platform functions ----------------------------
 struct DEBUGReadFileResult
 {
 	uint64 size;
 	void* data;
 };
 
-#define DEBUG_PLATFORM_FREE_FILE_MEMORY_FUNC(name) \
-	void name(const ThreadContext* thread, DEBUGReadFileResult* file)
-typedef DEBUG_PLATFORM_FREE_FILE_MEMORY_FUNC(DEBUGPlatformFreeFileMemoryFunc);
-
-#define DEBUG_PLATFORM_READ_FILE_FUNC(name) \
-	DEBUGReadFileResult name(const ThreadContext* thread, const char* fileName)
-typedef DEBUG_PLATFORM_READ_FILE_FUNC(DEBUGPlatformReadFileFunc);
-
-#define DEBUG_PLATFORM_WRITE_FILE_FUNC(name) \
-	bool32 name(const ThreadContext* thread, const char* fileName, \
-		uint64 memorySize, const void* memory, bool overwrite)
-typedef DEBUG_PLATFORM_WRITE_FILE_FUNC(DEBUGPlatformWriteFileFunc);
+template <typename Allocator>
+DEBUGReadFileResult DEBUGPlatformReadFile(const ThreadContext* thread, Allocator* allocator,
+	const char* fileName);
+template <typename Allocator>
+void DEBUGPlatformFreeFile(const ThreadContext* thread, Allocator* allocator,
+	DEBUGReadFileResult* file);
+bool DEBUGPlatformWriteFile(const ThreadContext* thread, const char* fileName,
+	uint64 memorySize, const void* memory, bool overwrite);
+bool DEBUGPlatformFileChanged(const ThreadContext* thread, const char* fileName);
 
 #define MAX_KEYS_PER_FRAME 256
 
 struct ScreenInfo
 {
-	bool32 changed;
+	bool changed;
 
 	Vec2Int size;
 
@@ -141,12 +137,8 @@ struct GameAudio
 
 struct PlatformFunctions
 {
-	PlatformFlushLogsFunc* flushLogs;
 	OpenGLFunctions glFunctions;
-
-	DEBUGPlatformFreeFileMemoryFunc* DEBUGPlatformFreeFileMemory;
-	DEBUGPlatformReadFileFunc*       DEBUGPlatformReadFile;
-	DEBUGPlatformWriteFileFunc*      DEBUGPlatformWriteFile;
+	PlatformFlushLogsFunc* flushLogs;
 };
 
 struct MemoryBlock
@@ -158,18 +150,15 @@ struct MemoryBlock
 
 struct GameMemory
 {
-	bool32 isInitialized;
+	bool isInitialized;
 
 	MemoryBlock permanent;
 	MemoryBlock transient;
 
-	bool32 shouldInitGlobalVariables;
+	bool shouldInitGlobalVariables;
 };
 
 // ------------------------------ Game functions ------------------------------
-#define GAME_UPDATE_AND_RENDER_FUNC(name) void name( \
-	const ThreadContext* thread, \
-	const PlatformFunctions* platformFuncs, \
-	const GameInput* input, ScreenInfo screenInfo, float32 deltaTime, \
-	GameMemory* memory, GameAudio* audio, LogState* logState)
-typedef GAME_UPDATE_AND_RENDER_FUNC(GameUpdateAndRenderFunc);
+void GameUpdateAndRender(const ThreadContext* thread, const PlatformFunctions* platformFuncs,
+	const GameInput* input, ScreenInfo screenInfo, float32 deltaTime,
+	GameMemory* memory, GameAudio* audio, LogState* logState);

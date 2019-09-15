@@ -5,17 +5,6 @@
 #define NOMINMAX
 #include <Windows.h>
 
-struct Win32GameCode
-{
-	HMODULE gameCodeDLL;
-	FILETIME lastDLLWriteTime;
-
-	// Game functions can be nullptr, you must check before calling
-	GameUpdateAndRenderFunc* gameUpdateAndRender;
-
-	bool32 isValid;
-};
-
 struct Win32ReplayBuffer
 {
 	char filePath[MAX_PATH];
