@@ -20,21 +20,21 @@ struct ThreadContext
 	int placeholder;
 };
 
-struct DEBUGReadFileResult
+struct PlatformReadFileResult
 {
 	uint64 size;
 	void* data;
 };
 
 template <typename Allocator>
-DEBUGReadFileResult DEBUGPlatformReadFile(const ThreadContext* thread, Allocator* allocator,
+PlatformReadFileResult PlatformReadFile(const ThreadContext* thread, Allocator* allocator,
 	const char* fileName);
 template <typename Allocator>
-void DEBUGPlatformFreeFile(const ThreadContext* thread, Allocator* allocator,
-	DEBUGReadFileResult* file);
-bool DEBUGPlatformWriteFile(const ThreadContext* thread, const char* fileName,
+void PlatformFreeFile(const ThreadContext* thread, Allocator* allocator,
+	PlatformReadFileResult* file);
+bool PlatformWriteFile(const ThreadContext* thread, const char* fileName,
 	uint64 memorySize, const void* memory, bool overwrite);
-bool DEBUGPlatformFileChanged(const ThreadContext* thread, const char* fileName);
+bool PlatformFileChanged(const ThreadContext* thread, const char* fileName);
 
 #define MAX_KEYS_PER_FRAME 256
 

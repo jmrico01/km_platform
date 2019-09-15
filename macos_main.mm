@@ -105,7 +105,7 @@ DEBUG_PLATFORM_FREE_FILE_MEMORY_FUNC(DEBUGPlatformFreeFileMemory)
 
 DEBUG_PLATFORM_READ_FILE_FUNC(DEBUGPlatformReadFile)
 {
-	DEBUGReadFileResult result = {};
+	PlatformReadFileResult result = {};
 
 	char fullPath[MACOS_STATE_FILE_NAME_COUNT];
 	CatStrings(StringLength(pathToApp_), pathToApp_,

@@ -192,10 +192,10 @@ internal inline uint32 SafeTruncateUInt64(uint64 value)
 }
 
 template <typename Allocator>
-DEBUGReadFileResult DEBUGPlatformReadFile(const ThreadContext* thread, Allocator* allocator,
+PlatformReadFileResult PlatformReadFile(const ThreadContext* thread, Allocator* allocator,
 	const char* fileName)
 {
-	DEBUGReadFileResult result = {};
+	PlatformReadFileResult result = {};
 	
 	char fullPath[MAX_PATH];
 	CatStrings(StringLength(pathToApp_), pathToApp_,
@@ -234,14 +234,14 @@ DEBUGReadFileResult DEBUGPlatformReadFile(const ThreadContext* thread, Allocator
 }
 
 template <typename Allocator>
-void DEBUGPlatformFreeFile(const ThreadContext* thread, Allocator* allocator,
-	DEBUGReadFileResult* file)
+void PlatformFreeFile(const ThreadContext* thread, Allocator* allocator,
+	PlatformReadFileResult* file)
 {
 	DEBUG_ASSERT(file->data != nullptr);
 	allocator->Free(file->data);
 }
 
-bool DEBUGPlatformWriteFile(const ThreadContext* thread, const char* fileName,
+bool PlatformWriteFile(const ThreadContext* thread, const char* fileName,
 	uint64 memorySize, const void* memory, bool overwrite)
 {
 	HANDLE hFile = CreateFile(fileName, GENERIC_WRITE, NULL,
@@ -268,7 +268,7 @@ bool DEBUGPlatformWriteFile(const ThreadContext* thread, const char* fileName,
 	return bytesWritten == memorySize;
 }
 
-bool DEBUGPlatformFileChanged(const ThreadContext* thread, const char* fileName)
+bool PlatformFileChanged(const ThreadContext* thread, const char* fileName)
 {
 	// TODO implement this
 	static FILETIME lastWriteTime;
@@ -293,7 +293,7 @@ void LogString(const char* string, uint64 n)
 	}
 #endif
 
-	if (!DEBUGPlatformWriteFile(nullptr, logFilePath_.array.data, n, string, false)) {
+	if (!PlatformWriteFile(nullptr, logFilePath_.array.data, n, string, false)) {
 		DEBUG_PANIC("failed to write to log file");
 	}
 }
