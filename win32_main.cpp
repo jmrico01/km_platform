@@ -193,13 +193,13 @@ internal inline uint32 SafeTruncateUInt64(uint64 value)
 
 template <typename Allocator>
 PlatformReadFileResult PlatformReadFile(const ThreadContext* thread, Allocator* allocator,
-	const char* fileName)
+	const char* filePath)
 {
 	PlatformReadFileResult result = {};
 	
 	char fullPath[MAX_PATH];
 	CatStrings(StringLength(pathToApp_), pathToApp_,
-		StringLength(fileName), fileName, MAX_PATH, fullPath);
+		StringLength(filePath), filePath, MAX_PATH, fullPath);
 
 	HANDLE hFile = CreateFile(fullPath, GENERIC_READ, FILE_SHARE_READ,
 		NULL, OPEN_EXISTING, NULL, NULL);
@@ -241,10 +241,10 @@ void PlatformFreeFile(const ThreadContext* thread, Allocator* allocator,
 	allocator->Free(file->data);
 }
 
-bool PlatformWriteFile(const ThreadContext* thread, const char* fileName,
+bool PlatformWriteFile(const ThreadContext* thread, const char* filePath,
 	uint64 memorySize, const void* memory, bool overwrite)
 {
-	HANDLE hFile = CreateFile(fileName, GENERIC_WRITE, NULL,
+	HANDLE hFile = CreateFile(filePath, GENERIC_WRITE, NULL,
 		NULL, OPEN_ALWAYS, NULL, NULL);
 	if (hFile == INVALID_HANDLE_VALUE) {
 		// TODO log
@@ -268,7 +268,18 @@ bool PlatformWriteFile(const ThreadContext* thread, const char* fileName,
 	return bytesWritten == memorySize;
 }
 
-bool PlatformFileChanged(const ThreadContext* thread, const char* fileName)
+bool PlatformFileExists(const ThreadContext* thread, const char* filePath)
+{
+	WIN32_FIND_DATA findFileData;
+	HANDLE fileHandle = FindFirstFile(filePath, &findFileData);
+	bool found = fileHandle != INVALID_HANDLE_VALUE;
+	if (found) {
+		FindClose(fileHandle);
+	}
+	return found;
+}
+
+bool PlatformFileChanged(const ThreadContext* thread, const char* filePath)
 {
 	// TODO implement this
 	static FILETIME lastWriteTime;

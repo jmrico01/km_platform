@@ -28,13 +28,14 @@ struct PlatformReadFileResult
 
 template <typename Allocator>
 PlatformReadFileResult PlatformReadFile(const ThreadContext* thread, Allocator* allocator,
-	const char* fileName);
+	const char* filePath);
 template <typename Allocator>
 void PlatformFreeFile(const ThreadContext* thread, Allocator* allocator,
 	PlatformReadFileResult* file);
-bool PlatformWriteFile(const ThreadContext* thread, const char* fileName,
+bool PlatformWriteFile(const ThreadContext* thread, const char* filePath,
 	uint64 memorySize, const void* memory, bool overwrite);
-bool PlatformFileChanged(const ThreadContext* thread, const char* fileName);
+bool PlatformFileExists(const ThreadContext* thread, const char* filePath);
+bool PlatformFileChanged(const ThreadContext* thread, const char* filePath);
 
 #define MAX_KEYS_PER_FRAME 256
 
