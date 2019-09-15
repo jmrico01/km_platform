@@ -139,7 +139,6 @@ struct GameAudio
 struct PlatformFunctions
 {
 	OpenGLFunctions glFunctions;
-	PlatformFlushLogsFunc* flushLogs;
 };
 
 struct MemoryBlock
@@ -162,4 +161,4 @@ struct GameMemory
 // ------------------------------ Game functions ------------------------------
 void GameUpdateAndRender(const ThreadContext* thread, const PlatformFunctions* platformFuncs,
 	const GameInput* input, ScreenInfo screenInfo, float32 deltaTime,
-	GameMemory* memory, GameAudio* audio, LogState* logState);
+	GameMemory* memory, GameAudio* audio);

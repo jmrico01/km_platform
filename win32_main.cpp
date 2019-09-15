@@ -309,7 +309,7 @@ void LogString(const char* string, uint64 n)
 	}
 }
 
-PLATFORM_FLUSH_LOGS_FUNC(FlushLogs)
+void PlatformFlushLogs(LogState* logState)
 {
 	// TODO fix this
 	for (uint64 i = 0; i < logState->eventCount; i++) {
@@ -899,7 +899,7 @@ int CALLBACK WinMain(
 		MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 	if (!logState) {
 		LOG_ERROR("Log state memory allocation failed\n");
-		FlushLogs(logState);
+		PlatformFlushLogs(logState);
 		return 1;
 	}
 	logState->eventFirst = 0;
@@ -919,7 +919,7 @@ int CALLBACK WinMain(
 		100, 100, START_WIDTH, START_HEIGHT);
 	if (!hWnd) {
 		LOG_ERROR("Win32 create window failed\n");
-		FlushLogs(logState);
+		PlatformFlushLogs(logState);
 		return 1;
 	}
 	LOG_INFO("Created Win32 window\n");
@@ -941,18 +941,17 @@ int CALLBACK WinMain(
 	if (!Win32CreateRC(hWnd, screenInfo.colorBits, screenInfo.alphaBits,
 	screenInfo.depthBits, screenInfo.stencilBits)) {
 		LOG_ERROR("Win32 create RC failed\n");
-		FlushLogs(logState);
+		PlatformFlushLogs(logState);
 		return 1;
 	}
 	LOG_INFO("Created Win32 OpenGL rendering context\n");
 
 	PlatformFunctions platformFuncs = {};
-	platformFuncs.flushLogs = FlushLogs;
 
 	// Initialize OpenGL
 	if (!Win32InitOpenGL(&platformFuncs.glFunctions, screenInfo.size.x, screenInfo.size.y)) {
 		LOG_ERROR("Win32 OpenGL init failed\n");
-		FlushLogs(logState);
+		PlatformFlushLogs(logState);
 		return 1;
 	}
 	LOG_INFO("Initialized Win32 OpenGL\n");
@@ -970,7 +969,7 @@ int CALLBACK WinMain(
 	Win32Audio winAudio = {};
 	if (!Win32InitAudio(&winAudio, AUDIO_DEFAULT_BUFFER_SIZE_MILLISECONDS)) {
 		LOG_ERROR("Win32 audio init failed\n");
-		FlushLogs(logState);
+		PlatformFlushLogs(logState);
 		return 1;
 	}
 	winAudio.latency = winAudio.sampleRate / monitorRefreshHz * 2;
@@ -986,7 +985,7 @@ int CALLBACK WinMain(
 		MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 	if (!gameAudio.buffer) {
 		LOG_ERROR("Win32 audio memory allocation failed\n");
-		FlushLogs(logState);
+		PlatformFlushLogs(logState);
 		return 1;
 	}
 	gameAudio.sampleDelta = 0; // TODO revise this
@@ -1012,7 +1011,7 @@ int CALLBACK WinMain(
 		MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 	if (!gameMemory.permanent.memory) {
 		LOG_ERROR("Win32 memory allocation failed\n");
-		FlushLogs(logState);
+		PlatformFlushLogs(logState);
 		return 1;
 	}
 	gameMemory.transient.memory = ((uint8*)gameMemory.permanent.memory +
@@ -1088,7 +1087,7 @@ int CALLBACK WinMain(
 	QueryPerformanceCounter(&timerLast);
 	uint64 cyclesLast = __rdtsc();
 
-	FlushLogs(logState);
+	PlatformFlushLogs(logState);
 	running_ = true;
 	while (running_) {
 		// Process keyboard input & other messages
@@ -1267,7 +1266,7 @@ int CALLBACK WinMain(
 		// TODO this
 		GameUpdateAndRender(&thread, &platformFuncs,
 			newInput, screenInfo, elapsed,
-			&gameMemory, &gameAudio, logState);
+			&gameMemory, &gameAudio);
 		screenInfo.changed = false;
 
 		UINT32 audioPadding;
@@ -1289,7 +1288,7 @@ int CALLBACK WinMain(
 			}
 		}
 
-		FlushLogs(logState);
+		PlatformFlushLogs(logState);
 
 		// NOTE
 		// SwapBuffers seems to effectively stall for vsync target time
@@ -1308,7 +1307,7 @@ int CALLBACK WinMain(
 
 	Win32StopAudio(&winAudio);
 
-	FlushLogs(logState);
+	PlatformFlushLogs(logState);
 
 	return 0;
 }
