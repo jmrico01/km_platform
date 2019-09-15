@@ -172,11 +172,11 @@ internal void Win32GetInputFileLocation(
 	Win32BuildExePathFileName(state, temp, destCount, dest);
 }
 
-inline FILETIME Win32GetLastWriteTime(char* fileName)
+inline FILETIME Win32GetLastWriteTime(const char* filePath)
 {
 	WIN32_FILE_ATTRIBUTE_DATA data;
-	if (!GetFileAttributesEx(fileName, GetFileExInfoStandard, &data)) {
-		// TODO log?
+	if (!GetFileAttributesEx(filePath, GetFileExInfoStandard, &data)) {
+		LOG_ERROR("GetFileAttributesEx failed for file %s\n", filePath);
 		FILETIME zero = {};
 		return zero;
 	}
@@ -281,8 +281,28 @@ bool PlatformFileExists(const ThreadContext* thread, const char* filePath)
 
 bool PlatformFileChanged(const ThreadContext* thread, const char* filePath)
 {
-	// TODO implement this
-	static FILETIME lastWriteTime;
+	static HashTable<FILETIME> fileTimes;
+	static bool initialized = false;
+	if (!initialized) {
+		fileTimes.Init();
+		initialized = true;
+	}
+
+	FILETIME lastWriteTime = Win32GetLastWriteTime(filePath);
+
+	HashKey key(filePath);
+	FILETIME* value = fileTimes.GetValue(key);
+	if (!value) {
+		fileTimes.Add(key, lastWriteTime);
+		return true;
+	}
+
+	if (lastWriteTime.dwLowDateTime != value->dwLowDateTime
+	|| lastWriteTime.dwHighDateTime != value->dwHighDateTime) {
+		*value = lastWriteTime;
+		return true;
+	}
+
 	return false;
 }
 
