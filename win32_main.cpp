@@ -285,7 +285,6 @@ bool PlatformFileChanged(const ThreadContext* thread, const char* filePath)
 	static HashTable<FILETIME> fileTimes;
 	static bool initialized = false;
 	if (!initialized) {
-		fileTimes.Init();
 		initialized = true;
 	}
 
@@ -325,7 +324,7 @@ void LogString(const char* string, uint64 n)
 	}
 #endif
 
-	if (!PlatformWriteFile(nullptr, logFilePath_.array.data, n, string, false)) {
+	if (!PlatformWriteFile(nullptr, logFilePath_.data, n, string, false)) {
 		DEBUG_PANIC("failed to write to log file");
 	}
 }
@@ -907,14 +906,13 @@ int CALLBACK WinMain(
 	HINSTANCE hInstance, HINSTANCE hPrevInst,
 	LPSTR cmdline, int cmd_show)
 {
-	logFilePath_.Init();
 	SYSTEMTIME systemTime;
 	GetLocalTime(&systemTime);
-	int n = stbsp_snprintf(logFilePath_.array.data, MAX_PATH,
+	int n = stbsp_snprintf(logFilePath_.data, MAX_PATH,
 		"logs/log%04d-%02d-%02d_%02d-%02d-%02d.txt",
 		systemTime.wYear, systemTime.wMonth, systemTime.wDay,
 		systemTime.wHour, systemTime.wMinute, systemTime.wSecond);
-	logFilePath_.array.size += n;
+	logFilePath_.size += n;
 
 	LogState* logState = (LogState*)VirtualAlloc(0, sizeof(LogState),
 		MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
