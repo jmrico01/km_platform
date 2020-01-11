@@ -184,14 +184,6 @@ inline FILETIME Win32GetLastWriteTime(const char* filePath)
 	return data.ftLastWriteTime;
 }
 
-internal inline uint32 SafeTruncateUInt64(uint64 value)
-{
-	// TODO defines for maximum values
-	DEBUG_ASSERT(value <= 0xFFFFFFFF);
-	uint32 result = (uint32)value;
-	return result;
-}
-
 template <typename Allocator>
 PlatformReadFileResult PlatformReadFile(const ThreadContext* thread, Allocator* allocator,
 	const char* filePath)
