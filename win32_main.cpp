@@ -12,7 +12,6 @@
 #include <km_common/km_log.h>
 #include <km_common/km_string.h>
 #include <opengl.h>
-#undef STB_SPRINTF_IMPLEMENTATION
 #include <stb_sprintf.h>
 #ifdef APP_315K
 #include <win32_arduino.h>
