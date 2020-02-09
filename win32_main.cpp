@@ -172,131 +172,6 @@ internal void Win32GetInputFileLocation(
 	Win32BuildExePathFileName(state, temp, destCount, dest);
 }
 
-inline FILETIME Win32GetLastWriteTime(const char* filePath)
-{
-	WIN32_FILE_ATTRIBUTE_DATA data;
-	if (!GetFileAttributesEx(filePath, GetFileExInfoStandard, &data)) {
-		LOG_ERROR("GetFileAttributesEx failed for file %s\n", filePath);
-		FILETIME zero = {};
-		return zero;
-	}
-	return data.ftLastWriteTime;
-}
-
-template <typename Allocator>
-PlatformReadFileResult PlatformReadFile(const ThreadContext* thread, Allocator* allocator,
-	const char* filePath)
-{
-	PlatformReadFileResult result = {};
-	
-	char fullPath[MAX_PATH];
-	CatStrings(StringLength(pathToApp_), pathToApp_,
-		StringLength(filePath), filePath, MAX_PATH, fullPath);
-
-	HANDLE hFile = CreateFile(fullPath, GENERIC_READ, FILE_SHARE_READ,
-		NULL, OPEN_EXISTING, NULL, NULL);
-	if (hFile == INVALID_HANDLE_VALUE) {
-		// TODO log
-		return result;
-	}
-
-	LARGE_INTEGER fileSize;
-	if (!GetFileSizeEx(hFile, &fileSize)) {
-		// TODO log
-		return result;
-	}
-
-	uint32 fileSize32 = SafeTruncateUInt64(fileSize.QuadPart);
-	result.data = allocator->Allocate(fileSize32);
-	if (!result.data) {
-		// TODO log
-		return result;
-	}
-
-	DWORD bytesRead;
-	if (!ReadFile(hFile, result.data, fileSize32, &bytesRead, NULL) || fileSize32 != bytesRead) {
-		// TODO log
-		allocator->Free(&result.data);
-		return result;
-	}
-
-	result.size = fileSize32;
-	CloseHandle(hFile);
-	return result;
-}
-
-template <typename Allocator>
-void PlatformFreeFile(const ThreadContext* thread, Allocator* allocator,
-	PlatformReadFileResult* file)
-{
-	DEBUG_ASSERT(file->data != nullptr);
-	allocator->Free(file->data);
-}
-
-bool PlatformWriteFile(const ThreadContext* thread, const char* filePath,
-	uint64 memorySize, const void* memory, bool overwrite)
-{
-	HANDLE hFile = CreateFile(filePath, GENERIC_WRITE, NULL,
-		NULL, OPEN_ALWAYS, NULL, NULL);
-	if (hFile == INVALID_HANDLE_VALUE) {
-		// TODO log
-		return false;
-	}
-
-	if (!overwrite) {
-		DWORD dwPos = SetFilePointer(hFile, 0, NULL, FILE_END);
-		if (dwPos == INVALID_SET_FILE_POINTER) {
-			// TODO GetLastError to make sure it's an error... ugh
-		}
-	}
-
-	DWORD bytesWritten;
-	if (!WriteFile(hFile, memory, (DWORD)memorySize, &bytesWritten, NULL)) {
-		// TODO log
-		return false;
-	}
-
-	CloseHandle(hFile);
-	return bytesWritten == memorySize;
-}
-
-bool PlatformFileExists(const ThreadContext* thread, const char* filePath)
-{
-	WIN32_FIND_DATA findFileData;
-	HANDLE fileHandle = FindFirstFile(filePath, &findFileData);
-	bool found = fileHandle != INVALID_HANDLE_VALUE;
-	if (found) {
-		FindClose(fileHandle);
-	}
-	return found;
-}
-
-bool PlatformFileChanged(const ThreadContext* thread, const char* filePath)
-{
-	static HashTable<FILETIME> fileTimes;
-	static bool initialized = false;
-	if (!initialized) {
-		initialized = true;
-	}
-
-	FILETIME lastWriteTime = Win32GetLastWriteTime(filePath);
-
-	HashKey key(filePath);
-	FILETIME* value = fileTimes.GetValue(key);
-	if (!value) {
-		fileTimes.Add(key, lastWriteTime);
-		return true;
-	}
-
-	if (lastWriteTime.dwLowDateTime != value->dwLowDateTime
-	|| lastWriteTime.dwHighDateTime != value->dwHighDateTime) {
-		*value = lastWriteTime;
-		return true;
-	}
-
-	return false;
-}
-
 void LogString(const char* string, uint64 n)
 {
 #if GAME_SLOW
@@ -315,7 +190,8 @@ void LogString(const char* string, uint64 n)
 	}
 #endif
 
-	if (!PlatformWriteFile(nullptr, logFilePath_.data, n, string, false)) {
+	Array<uint8> logData = { .size = n, .data = (uint8*)string };
+	if (!WriteFile(logFilePath_.ToArray(), logData, true)) {
 		DEBUG_PANIC("failed to write to log file");
 	}
 }

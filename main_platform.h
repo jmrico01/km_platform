@@ -20,23 +20,6 @@ struct ThreadContext
 	int placeholder;
 };
 
-struct PlatformReadFileResult
-{
-	uint64 size;
-	void* data;
-};
-
-template <typename Allocator>
-PlatformReadFileResult PlatformReadFile(const ThreadContext* thread, Allocator* allocator,
-	const char* filePath);
-template <typename Allocator>
-void PlatformFreeFile(const ThreadContext* thread, Allocator* allocator,
-	PlatformReadFileResult* file);
-bool PlatformWriteFile(const ThreadContext* thread, const char* filePath,
-	uint64 memorySize, const void* memory, bool overwrite);
-bool PlatformFileExists(const ThreadContext* thread, const char* filePath);
-bool PlatformFileChanged(const ThreadContext* thread, const char* filePath);
-
 #define MAX_KEYS_PER_FRAME 256
 
 struct ScreenInfo
