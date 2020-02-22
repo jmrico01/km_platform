@@ -35,12 +35,12 @@
 #define START_HEIGHT 720
 
 // TODO this is a global for now
-global_var char pathToApp_[MAX_PATH];
+global_var char pathToApp_[PATH_MAX_LENGTH];
 global_var bool running_ = true;
 global_var GameInput* input_ = nullptr;             // for WndProc WM_CHAR
 global_var glViewportFunc* glViewport_ = nullptr;   // for WndProc WM_SIZE
 global_var ScreenInfo* screenInfo_ = nullptr;       // for WndProc WM_SIZE
-global_var FixedArray<char, MAX_PATH> logFilePath_;
+global_var FixedArray<char, PATH_MAX_LENGTH> logFilePath_;
 
 global_var WINDOWPLACEMENT DEBUGwpPrev = { sizeof(DEBUGwpPrev) };
 
@@ -518,7 +518,7 @@ internal void Win32RecordInputBegin(Win32State* state, int inputRecordingIndex)
 	if (replayBuffer->gameMemoryBlock) {
 		state->inputRecordingIndex = inputRecordingIndex;
 
-		char filePath[MAX_PATH];
+		char filePath[PATH_MAX_LENGTH];
 		Win32GetInputFileLocation(state, true, inputRecordingIndex,
 			sizeof(filePath), filePath);
 		state->recordingHandle = CreateFile(filePath, GENERIC_WRITE,
@@ -549,7 +549,7 @@ internal void Win32PlaybackBegin(Win32State* state, int inputPlayingIndex)
 	{
 		state->inputPlayingIndex = inputPlayingIndex;
 
-		char filePath[MAX_PATH];
+		char filePath[PATH_MAX_LENGTH];
 		Win32GetInputFileLocation(state, true, inputPlayingIndex,
 			sizeof(filePath), filePath);
 		state->playbackHandle = CreateFile(filePath, GENERIC_READ,
@@ -775,7 +775,7 @@ int CALLBACK WinMain(
 {
 	SYSTEMTIME systemTime;
 	GetLocalTime(&systemTime);
-	int n = stbsp_snprintf(logFilePath_.data, MAX_PATH,
+	int n = stbsp_snprintf(logFilePath_.data, PATH_MAX_LENGTH,
 		"logs/log%04d-%02d-%02d_%02d-%02d-%02d.txt",
 		systemTime.wYear, systemTime.wMonth, systemTime.wDay,
 		systemTime.wHour, systemTime.wMinute, systemTime.wSecond);
@@ -794,7 +794,7 @@ int CALLBACK WinMain(
 
 	Win32State state = {};
 	Win32GetExeFilePath(&state);
-	RemoveFileNameFromPath(state.exeFilePath, pathToApp_, MAX_PATH);
+	RemoveFileNameFromPath(state.exeFilePath, pathToApp_, PATH_MAX_LENGTH);
 	LOG_INFO("Path to executable: %s\n", pathToApp_);
 
 	Win32LoadXInput();

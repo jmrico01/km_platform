@@ -7,7 +7,7 @@
 
 struct Win32ReplayBuffer
 {
-	char filePath[MAX_PATH];
+	char filePath[PATH_MAX_LENGTH];
 	HANDLE fileHandle;
 	HANDLE memoryMap;
 	void* gameMemoryBlock;
@@ -25,6 +25,6 @@ struct Win32State
 	HANDLE playbackHandle;
 	int inputPlayingIndex;
 
-	char exeFilePath[MAX_PATH];
+	char exeFilePath[PATH_MAX_LENGTH];
 	char* exeOnePastLastSlash;
 };
