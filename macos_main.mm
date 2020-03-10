@@ -772,7 +772,6 @@ int main(int argc, const char* argv[])
 		float deltaTime = (float)elapsedNanos * 1e-9;
 
 		if (gameCode.gameUpdateAndRender) {
-			ThreadContext thread = {};
 			CGRect contentViewFrame = [[window contentView] frame];
 			if (screenInfo.size.x != (int)contentViewFrame.size.width
 			|| screenInfo.size.y != (int)contentViewFrame.size.height) {
@@ -782,8 +781,7 @@ int main(int argc, const char* argv[])
 			}
 			gameAudio.fillLength = macAudio.latency;
 
-			gameCode.gameUpdateAndRender(&thread, &platformFuncs,
-				newInput, screenInfo, deltaTime,
+			gameCode.gameUpdateAndRender(platformFuncs, *newInput, screenInfo, deltaTime,
 				&gameMemory, &gameAudio
 			);
 			screenInfo.changed = false;

@@ -968,9 +968,7 @@ int main(int argc, char **argv)
         lastCounter = endCounter;
 
         if (gameCode.gameUpdateAndRender) {
-			ThreadContext thread = {};
-            gameCode.gameUpdateAndRender(&thread, &platformFuncs,
-                newInput, screenInfo, deltaTime,
+            gameCode.gameUpdateAndRender(platformFuncs, *newInput, screenInfo, deltaTime,
                 &gameMemory, &gameAudio_);
         }
 

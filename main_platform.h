@@ -7,18 +7,13 @@
 #include <km_common/km_math.h>
 #include <opengl.h>
 
+#ifdef APP_315K
 #define MIDI_IN_QUEUE_SIZE 1024
 
-#ifdef APP_315K
 #define ARDUINO_CHANNELS 4
 #define ARDUINO_ANALOG_INPUTS  6
 #define ARDUINO_DIGITAL_INPUTS 1
 #endif
-
-struct ThreadContext
-{
-	int placeholder;
-};
 
 #define MAX_KEYS_PER_FRAME 256
 
@@ -64,6 +59,7 @@ struct GameControllerInput
 	};
 };
 
+#ifdef APP_315K
 struct MidiMessage
 {
 	uint8 status;
@@ -77,7 +73,6 @@ struct MidiInput
 	MidiMessage messages[MIDI_IN_QUEUE_SIZE];
 };
 
-#ifdef APP_315K
 struct ArduinoInput
 {
 	bool connected;
@@ -102,8 +97,8 @@ struct GameInput
 
 	GameControllerInput controllers[4];
 
-	MidiInput midiIn;
 #ifdef APP_315K
+	MidiInput midiIn;
 	ArduinoInput arduinoIn;
 #endif
 };
@@ -142,6 +137,5 @@ struct GameMemory
 };
 
 // ------------------------------ Game functions ------------------------------
-void GameUpdateAndRender(const ThreadContext* thread, const PlatformFunctions* platformFuncs,
-	const GameInput* input, ScreenInfo screenInfo, float32 deltaTime,
-	GameMemory* memory, GameAudio* audio);
+void GameUpdateAndRender(const PlatformFunctions& platformFuncs, const GameInput& input,
+	const ScreenInfo& screenInfo, float32 deltaTime, GameMemory* memory, GameAudio* audio);

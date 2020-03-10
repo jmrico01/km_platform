@@ -10,6 +10,7 @@
 #define REFERENCE_TIMES_PER_MILLISECOND \
 	(1000000 / REFERENCE_TIME_NANOSECONDS)
 
+#ifdef APP_315K
 void CALLBACK MidiInputCallback(
 	HMIDIIN hMidiIn, UINT wMsg,
 	DWORD_PTR dwInstance, DWORD_PTR dwParam1, DWORD_PTR dwParam2)
@@ -41,6 +42,7 @@ void CALLBACK MidiInputCallback(
 	}
 	winAudio->midiInBusy = false;
 }
+#endif
 
 bool32 Win32InitAudio(Win32Audio* winAudio, uint64 bufferSizeMilliseconds)
 {
@@ -194,6 +196,7 @@ bool32 Win32InitAudio(Win32Audio* winAudio, uint64 bufferSizeMilliseconds)
 		return false;
 	}
 
+#ifdef APP_315K
 	// Setup MIDI input
 	winAudio->midiInBusy = false;
 	UINT midiInDevs = midiInGetNumDevs();
@@ -239,6 +242,7 @@ bool32 Win32InitAudio(Win32Audio* winAudio, uint64 bufferSizeMilliseconds)
 	else {
 		LOG_WARN("No MIDI input devices detected\n");
 	}
+#endif
 
 	return true;
 }

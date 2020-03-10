@@ -20,12 +20,9 @@
 #include "win32_audio.h"
 
 // TODO
-// - WINDOWS 7 VIRTUAL MACHINE
-// 
 // - Getting a handle to our own exe file
 // - Asset loading path
 // - Threading (launch a thread)
-// - Sleep/timeBeginPeriod (don't melt the processor)
 // - ClipCursor() (multimonitor support)
 // - WM_SETCURSOR (control cursor visibility)
 // - QueryCancelAutoplay
@@ -258,9 +255,7 @@ internal void Win32LoadXInput()
 	}
 }
 
-LRESULT CALLBACK WndProc(
-	HWND hWnd, UINT message,
-	WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	LRESULT result = 0;
 
@@ -367,9 +362,7 @@ internal int Win32KeyCodeToKM(int vkCode)
 	}
 }
 
-internal void Win32ProcessMessages(
-	HWND hWnd, GameInput* gameInput,
-	OpenGLFunctions* glFuncs)
+internal void Win32ProcessMessages(HWND hWnd, GameInput* gameInput, OpenGLFunctions* glFuncs)
 {
 	MSG msg;
 	while (PeekMessage(&msg, 0, 0, 0, PM_REMOVE)) {
@@ -486,11 +479,8 @@ internal void Win32ProcessMessages(
 	}
 }
 
-internal void Win32ProcessXInputButton(
-	DWORD xInputButtonState,
-	GameButtonState *oldState,
-	DWORD buttonBit,
-	GameButtonState *newState)
+internal void Win32ProcessXInputButton(DWORD xInputButtonState, GameButtonState *oldState,
+	DWORD buttonBit, GameButtonState *newState)
 {
 	newState->isDown = ((xInputButtonState & buttonBit) == buttonBit);
 	newState->transitions = (oldState->isDown != newState->isDown) ? 1 : 0;
@@ -997,6 +987,7 @@ int CALLBACK WinMain(
 			}
 		}
 
+#ifdef APP_315K
 		// MIDI input
 		if (!winAudio.midiInBusy) {
 			winAudio.midiInBusy = true;
@@ -1005,7 +996,6 @@ int CALLBACK WinMain(
 			winAudio.midiInBusy = false;
 		}
 
-#ifdef APP_315K
 		// Arduino controller input
 		if (arduinoConnected) {
 			MemCopy(&newInput->arduinoIn, &oldInput->arduinoIn, sizeof(ArduinoInput));
@@ -1022,10 +1012,8 @@ int CALLBACK WinMain(
 		for (DWORD controllerInd = 0;
 		controllerInd < maxControllerCount;
 		controllerInd++) {
-			GameControllerInput *oldController =
-				&oldInput->controllers[controllerInd];
-			GameControllerInput *newController =
-				&newInput->controllers[controllerInd];
+			GameControllerInput *oldController = &oldInput->controllers[controllerInd];
+			GameControllerInput *newController = &newInput->controllers[controllerInd];
 
 			XINPUT_STATE controllerState;
 			// TODO the get state function has a really bad performance bug
@@ -1147,12 +1135,9 @@ int CALLBACK WinMain(
 		LOG_INFO("sound time sync offset (real minus sound): %f\n",
 			totalElapsedTime - totalElapsedSound);*/
 
-		ThreadContext thread = {};
 		gameAudio.fillLength = winAudio.latency;
 		// TODO this
-		GameUpdateAndRender(&thread, &platformFuncs,
-			newInput, screenInfo, elapsed,
-			&gameMemory, &gameAudio);
+		GameUpdateAndRender(platformFuncs, *newInput, screenInfo, elapsed, &gameMemory, &gameAudio);
 		screenInfo.changed = false;
 
 		UINT32 audioPadding;
