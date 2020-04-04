@@ -10,6 +10,7 @@
 #include <km_common/km_lib.h>
 #undef ERROR // TODO ughhhh where is this coming from
 #include <km_common/km_log.h>
+#include <km_common/km_os.h>
 #include <km_common/km_string.h>
 #include <opengl.h>
 #include <stb_sprintf.h>
