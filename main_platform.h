@@ -20,9 +20,9 @@
 struct ScreenInfo
 {
 	bool changed;
-
+    
 	Vec2Int size;
-
+    
 	int8 colorBits;
 	int8 alphaBits;
 	int8 depthBits;
@@ -38,12 +38,12 @@ struct GameButtonState
 struct GameControllerInput
 {
 	bool isConnected;
-
+    
 	Vec2 leftStart;
 	Vec2 leftEnd;
 	Vec2 rightStart;
 	Vec2 rightEnd;
-
+    
 	union
 	{
 		GameButtonState buttons[6];
@@ -76,7 +76,7 @@ struct MidiInput
 struct ArduinoInput
 {
 	bool connected;
-
+    
 	uint8 activeChannel;
 	GameButtonState pedal;
 	float32 analogValues[ARDUINO_CHANNELS][ARDUINO_ANALOG_INPUTS];
@@ -90,13 +90,13 @@ struct GameInput
 	Vec2Int mouseDelta;
 	int mouseWheel;
 	int mouseWheelDelta;
-
+    
 	GameButtonState keyboard[KM_KEY_LAST];
 	char keyboardString[MAX_KEYS_PER_FRAME];
 	uint32 keyboardStringLen;
-
+    
 	GameControllerInput controllers[4];
-
+    
 #ifdef APP_315K
 	MidiInput midiIn;
 	ArduinoInput arduinoIn;
@@ -109,7 +109,7 @@ struct GameAudio
 	uint8 channels;
 	uint64 bufferSizeSamples;
 	float32* buffer;
-
+    
 	uint64 sampleDelta; // Samples elapsed/written since last update
 	uint64 fillLength;
 };
@@ -119,6 +119,7 @@ struct PlatformFunctions
 	OpenGLFunctions glFunctions;
 };
 
+// TODO this should probably be in km_memory something
 struct MemoryBlock
 {
 	uint64 size;
@@ -129,13 +130,13 @@ struct MemoryBlock
 struct GameMemory
 {
 	bool isInitialized;
-
+    
 	MemoryBlock permanent;
 	MemoryBlock transient;
-
+    
 	bool shouldInitGlobalVariables;
 };
 
 // ------------------------------ Game functions ------------------------------
 void GameUpdateAndRender(const PlatformFunctions& platformFuncs, const GameInput& input,
-	const ScreenInfo& screenInfo, float32 deltaTime, GameMemory* memory, GameAudio* audio);
+                         const ScreenInfo& screenInfo, float32 deltaTime, GameMemory* memory, GameAudio* audio);
