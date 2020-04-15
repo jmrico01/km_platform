@@ -395,10 +395,6 @@ internal void Win32ProcessMessages(HWND hWnd, GameInput* gameInput, OpenGLFuncti
                     gameInput->keyboard[kmKeyCode].transitions = transitions;
                 }
                 
-                if (vkCode == VK_ESCAPE) {
-                    // TODO eventually handle this in the game layer
-                    running_ = false;
-                }
                 if (vkCode == VK_F11) {
                     Win32ToggleFullscreen(hWnd, glFuncs);
                 }
