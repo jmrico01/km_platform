@@ -100,18 +100,18 @@ internal void LinuxUnloadLibrary(void* handle)
 
 internal inline uint32 SafeTruncateUInt64(uint64 value)
 {
-	// TODO defines for maximum values
-	DEBUG_ASSERT(value <= 0xFFFFFFFF);
-	uint32 result = (uint32)value;
-	return result;
+    // TODO defines for maximum values
+    DEBUG_ASSERT(value <= 0xFFFFFFFF);
+    uint32 result = (uint32)value;
+    return result;
 }
 
 internal void RemoveFileNameFromPath(
     const char* filePath, char* dest, uint64 destLength)
 {
     unsigned int lastSlash = 0;
-	// TODO confused... some cross-platform code inside a win32 file
-	//	maybe I meant to pull this out sometime?
+    // TODO confused... some cross-platform code inside a win32 file
+    //  maybe I meant to pull this out sometime?
 #ifdef _WIN32
     char pathSep = '\\';
 #else
@@ -436,9 +436,9 @@ internal GLXFBConfig* LinuxGetOpenGLFramebufferConfig(Display *display)
 
 internal bool32 LinuxLoadBaseGLFunctions(OpenGLFunctions* glFuncs)
 {
-	// Generate function loading code
+    // Generate function loading code
 #define FUNC(returntype, name, ...) LOAD_GL_FUNCTION(name);
-	GL_FUNCTIONS_BASE
+    GL_FUNCTIONS_BASE
 #undef FUNC
 
     return true;
@@ -446,9 +446,9 @@ internal bool32 LinuxLoadBaseGLFunctions(OpenGLFunctions* glFuncs)
 
 internal bool32 LinuxLoadAllGLFunctions(OpenGLFunctions* glFuncs)
 {
-	// Generate function loading code
+    // Generate function loading code
 #define FUNC(returntype, name, ...) LOAD_GL_FUNCTION(name);
-	GL_FUNCTIONS_ALL
+    GL_FUNCTIONS_ALL
 #undef FUNC
 
     return true;
@@ -464,9 +464,9 @@ internal bool32 LinuxInitOpenGL(
         return false;
     }
 
-	glFuncs->glViewport(0, 0, width, height);
+    glFuncs->glViewport(0, 0, width, height);
 
-	// Set v-sync
+    // Set v-sync
     LOAD_GLX_FUNCTION(glXSwapIntervalEXT);
     if (glXSwapIntervalEXT) {
         glXSwapIntervalEXT(display, glWindow, 1);
@@ -477,27 +477,27 @@ internal bool32 LinuxInitOpenGL(
         //return false;
     }
 
-	const GLubyte* vendorString = glFuncs->glGetString(GL_VENDOR);
-	LOG_INFO("GL_VENDOR: %s\n", vendorString);
-	const GLubyte* rendererString = glFuncs->glGetString(GL_RENDERER);
-	LOG_INFO("GL_RENDERER: %s\n", rendererString);
-	const GLubyte* versionString = glFuncs->glGetString(GL_VERSION);
-	LOG_INFO("GL_VERSION: %s\n", versionString);
+    const GLubyte* vendorString = glFuncs->glGetString(GL_VENDOR);
+    LOG_INFO("GL_VENDOR: %s\n", vendorString);
+    const GLubyte* rendererString = glFuncs->glGetString(GL_RENDERER);
+    LOG_INFO("GL_RENDERER: %s\n", rendererString);
+    const GLubyte* versionString = glFuncs->glGetString(GL_VERSION);
+    LOG_INFO("GL_VERSION: %s\n", versionString);
 
-	int32 majorVersion = versionString[0] - '0';
-	int32 minorVersion = versionString[2] - '0';
+    int32 majorVersion = versionString[0] - '0';
+    int32 minorVersion = versionString[2] - '0';
 
-	if (majorVersion < 3 || (majorVersion == 3 && minorVersion < 3)) {
-		LOG_ERROR("Unsupported OpenGL version (less than 3.3)\n");
-		return false;
-	}
+    if (majorVersion < 3 || (majorVersion == 3 && minorVersion < 3)) {
+        LOG_ERROR("Unsupported OpenGL version (less than 3.3)\n");
+        return false;
+    }
 
-	if (!LinuxLoadAllGLFunctions(glFuncs)) {
+    if (!LinuxLoadAllGLFunctions(glFuncs)) {
         LOG_INFO("Failed to load all GL functions\n");
-		return false;
-	}
+        return false;
+    }
 
-	const GLubyte* glslString =
+    const GLubyte* glslString =
         glFuncs->glGetString(GL_SHADING_LANGUAGE_VERSION);
     LOG_INFO("GL_SHADING_LANGUAGE_VERSION: %s\n", glslString);
 
@@ -877,10 +877,10 @@ int main(int argc, char **argv)
     LOG_INFO("Created GLX context\n");
 
     PlatformFunctions platformFuncs = {};
-	platformFuncs.DEBUGPlatformPrint = DEBUGPlatformPrint;
-	platformFuncs.DEBUGPlatformFreeFileMemory = DEBUGPlatformFreeFileMemory;
-	platformFuncs.DEBUGPlatformReadFile = DEBUGPlatformReadFile;
-	platformFuncs.DEBUGPlatformWriteFile = DEBUGPlatformWriteFile;
+    platformFuncs.DEBUGPlatformPrint = DEBUGPlatformPrint;
+    platformFuncs.DEBUGPlatformFreeFileMemory = DEBUGPlatformFreeFileMemory;
+    platformFuncs.DEBUGPlatformReadFile = DEBUGPlatformReadFile;
+    platformFuncs.DEBUGPlatformWriteFile = DEBUGPlatformWriteFile;
     if (!LinuxInitOpenGL(&platformFuncs.glFunctions, display, glWindow,
     screenInfo.size.x, screenInfo.size.y)) {
         return 1;
@@ -895,38 +895,38 @@ int main(int argc, char **argv)
     LOG_INFO("Initialized Linux audio\n");
 
 #if GAME_INTERNAL
-	void* baseAddress = (void*)TERABYTES((uint64)2);;
+    void* baseAddress = (void*)TERABYTES((uint64)2);;
 #else
-	void* baseAddress = 0;
+    void* baseAddress = 0;
 #endif
     
     GameMemory gameMemory = {};
     gameMemory.shouldInitGlobalVariables = true;
-	gameMemory.permanentStorageSize = MEGABYTES(64);
-	gameMemory.transientStorageSize = GIGABYTES(1);
+    gameMemory.permanentStorageSize = MEGABYTES(64);
+    gameMemory.transientStorageSize = GIGABYTES(1);
 
 
-	// TODO Look into using large virtual pages for this
+    // TODO Look into using large virtual pages for this
     // potentially big allocation
-	uint64 totalSize = gameMemory.permanentStorageSize
+    uint64 totalSize = gameMemory.permanentStorageSize
         + gameMemory.transientStorageSize;
-	// TODO check allocation fail?
-	gameMemory.permanentStorage = mmap(baseAddress, (size_t)totalSize,
-		PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-	if (!gameMemory.permanentStorage) {
-		LOG_ERROR("Linux memory allocation (mmap) failed\n");
-		return 1;
-	}
-	gameMemory.transientStorage = ((uint8*)gameMemory.permanentStorage +
-		gameMemory.permanentStorageSize);
+    // TODO check allocation fail?
+    gameMemory.permanentStorage = mmap(baseAddress, (size_t)totalSize,
+        PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if (!gameMemory.permanentStorage) {
+        LOG_ERROR("Linux memory allocation (mmap) failed\n");
+        return 1;
+    }
+    gameMemory.transientStorage = ((uint8*)gameMemory.permanentStorage +
+        gameMemory.permanentStorageSize);
 
-	linuxState.gameMemorySize = totalSize;
-	linuxState.gameMemoryBlock = gameMemory.permanentStorage;
-	LOG_INFO("Initialized game memory\n");
+    linuxState.gameMemorySize = totalSize;
+    linuxState.gameMemoryBlock = gameMemory.permanentStorage;
+    LOG_INFO("Initialized game memory\n");
 
-	GameInput input[2] = {};
-	GameInput *newInput = &input[0];
-	GameInput *oldInput = &input[1];
+    GameInput input[2] = {};
+    GameInput *newInput = &input[0];
+    GameInput *oldInput = &input[1];
 
     struct timespec lastCounter = LinuxGetWallClock();
 
@@ -1065,9 +1065,9 @@ int main(int argc, char **argv)
         
         glXSwapBuffers(display, glWindow);
 
-		GameInput *temp = newInput;
-		newInput = oldInput;
-		oldInput = temp;
+        GameInput *temp = newInput;
+        newInput = oldInput;
+        oldInput = temp;
         ClearInput(newInput, oldInput);
     }
 

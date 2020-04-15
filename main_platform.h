@@ -19,122 +19,122 @@
 
 struct ScreenInfo
 {
-	bool changed;
+    bool changed;
     
-	Vec2Int size;
+    Vec2Int size;
     
-	int8 colorBits;
-	int8 alphaBits;
-	int8 depthBits;
-	int8 stencilBits;
+    int8 colorBits;
+    int8 alphaBits;
+    int8 depthBits;
+    int8 stencilBits;
 };
 
 struct GameButtonState
 {
-	int transitions;
-	bool isDown;
+    int transitions;
+    bool isDown;
 };
 
 struct GameControllerInput
 {
-	bool isConnected;
+    bool isConnected;
     
-	Vec2 leftStart;
-	Vec2 leftEnd;
-	Vec2 rightStart;
-	Vec2 rightEnd;
+    Vec2 leftStart;
+    Vec2 leftEnd;
+    Vec2 rightStart;
+    Vec2 rightEnd;
     
-	union
-	{
-		GameButtonState buttons[6];
-		struct
-		{
-			GameButtonState a;
-			GameButtonState b;
-			GameButtonState x;
-			GameButtonState y;
-			GameButtonState lShoulder;
-			GameButtonState rShoulder;
-		};
-	};
+    union
+    {
+        GameButtonState buttons[6];
+        struct
+        {
+            GameButtonState a;
+            GameButtonState b;
+            GameButtonState x;
+            GameButtonState y;
+            GameButtonState lShoulder;
+            GameButtonState rShoulder;
+        };
+    };
 };
 
 #ifdef APP_315K
 struct MidiMessage
 {
-	uint8 status;
-	uint8 dataByte1;
-	uint8 dataByte2;
+    uint8 status;
+    uint8 dataByte1;
+    uint8 dataByte2;
 };
 
 struct MidiInput
 {
-	int numMessages;
-	MidiMessage messages[MIDI_IN_QUEUE_SIZE];
+    int numMessages;
+    MidiMessage messages[MIDI_IN_QUEUE_SIZE];
 };
 
 struct ArduinoInput
 {
-	bool connected;
+    bool connected;
     
-	uint8 activeChannel;
-	GameButtonState pedal;
-	float32 analogValues[ARDUINO_CHANNELS][ARDUINO_ANALOG_INPUTS];
+    uint8 activeChannel;
+    GameButtonState pedal;
+    float32 analogValues[ARDUINO_CHANNELS][ARDUINO_ANALOG_INPUTS];
 };
 #endif
 
 struct GameInput
 {
-	GameButtonState mouseButtons[5];
-	Vec2Int mousePos;
-	Vec2Int mouseDelta;
-	int mouseWheel;
-	int mouseWheelDelta;
+    GameButtonState mouseButtons[5];
+    Vec2Int mousePos;
+    Vec2Int mouseDelta;
+    int mouseWheel;
+    int mouseWheelDelta;
     
-	GameButtonState keyboard[KM_KEY_LAST];
-	char keyboardString[MAX_KEYS_PER_FRAME];
-	uint32 keyboardStringLen;
+    GameButtonState keyboard[KM_KEY_LAST];
+    char keyboardString[MAX_KEYS_PER_FRAME];
+    uint32 keyboardStringLen;
     
-	GameControllerInput controllers[4];
+    GameControllerInput controllers[4];
     
 #ifdef APP_315K
-	MidiInput midiIn;
-	ArduinoInput arduinoIn;
+    MidiInput midiIn;
+    ArduinoInput arduinoIn;
 #endif
 };
 
 struct GameAudio
 {
-	uint32 sampleRate;
-	uint8 channels;
-	uint64 bufferSizeSamples;
-	float32* buffer;
+    uint32 sampleRate;
+    uint8 channels;
+    uint64 bufferSizeSamples;
+    float32* buffer;
     
-	uint64 sampleDelta; // Samples elapsed/written since last update
-	uint64 fillLength;
+    uint64 sampleDelta; // Samples elapsed/written since last update
+    uint64 fillLength;
 };
 
 struct PlatformFunctions
 {
-	OpenGLFunctions glFunctions;
+    OpenGLFunctions glFunctions;
 };
 
 // TODO this should probably be in km_memory something
 struct MemoryBlock
 {
-	uint64 size;
-	// Required to be cleared to zero at startup    TODO... why??
-	void* memory;
+    uint64 size;
+    // Required to be cleared to zero at startup    TODO... why??
+    void* memory;
 };
 
 struct GameMemory
 {
-	bool isInitialized;
+    bool isInitialized;
     
-	MemoryBlock permanent;
-	MemoryBlock transient;
+    MemoryBlock permanent;
+    MemoryBlock transient;
     
-	bool shouldInitGlobalVariables;
+    bool shouldInitGlobalVariables;
 };
 
 // ------------------------------ Game functions ------------------------------

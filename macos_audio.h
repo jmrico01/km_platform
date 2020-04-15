@@ -11,26 +11,26 @@
 
 struct MacOSAudio
 {
-	AudioStreamBasicDescription audioDescriptor;
-	AudioUnit audioUnit;
+    AudioStreamBasicDescription audioDescriptor;
+    AudioUnit audioUnit;
 
-	int sampleRate;
-	int channels;
-	int bufferSizeSamples;
-	int16* buffer;
+    int sampleRate;
+    int channels;
+    int bufferSizeSamples;
+    int16* buffer;
 
-	int readCursor;
-	int writeCursor;
+    int readCursor;
+    int writeCursor;
 
-	int latency;
+    int latency;
 
-	bool32 midiInBusy;
-	MidiInput midiIn;
+    bool32 midiInBusy;
+    MidiInput midiIn;
 };
 
 void MacOSInitCoreAudio(MacOSAudio* macOSAudio,
-	int sampleRate, int channels, int bufferSizeSamples);
+    int sampleRate, int channels, int bufferSizeSamples);
 void MacOSStopCoreAudio(MacOSAudio* macOSAudio);
 
 void MacOSWriteSamples(MacOSAudio* macAudio,
-	const GameAudio* gameAudio, int numSamples);
+    const GameAudio* gameAudio, int numSamples);
