@@ -11,8 +11,7 @@
 (1000000 / REFERENCE_TIME_NANOSECONDS)
 
 #ifdef APP_315K
-void CALLBACK MidiInputCallback(
-                                HMIDIIN hMidiIn, UINT wMsg,
+void CALLBACK MidiInputCallback(HMIDIIN hMidiIn, UINT wMsg,
                                 DWORD_PTR dwInstance, DWORD_PTR dwParam1, DWORD_PTR dwParam2)
 {
     Win32Audio* winAudio = (Win32Audio*)dwInstance;
@@ -51,9 +50,8 @@ bool Win32InitAudio(Win32Audio* winAudio, uint64 bufferSizeMilliseconds)
     HRESULT hr;
     
     IMMDeviceEnumerator* deviceEnumerator;
-    hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL,
-                          CLSCTX_ALL, __uuidof(IMMDeviceEnumerator),
-                          (void**)&deviceEnumerator);
+    hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL,
+                          __uuidof(IMMDeviceEnumerator), (void**)&deviceEnumerator);
     if (FAILED(hr)) {
         LOG_ERROR("Failed to create device enumerator\n");
         return false;
@@ -67,8 +65,7 @@ bool Win32InitAudio(Win32Audio* winAudio, uint64 bufferSizeMilliseconds)
     }
     
     IAudioClient* audioClient;
-    hr = device->Activate(__uuidof(IAudioClient), CLSCTX_ALL, NULL,
-                          (void**)&audioClient);
+    hr = device->Activate(__uuidof(IAudioClient), CLSCTX_ALL, NULL, (void**)&audioClient);
     if (FAILED(hr)) {
         LOG_ERROR("Failed to activate audio device\n");
         return false;
@@ -133,14 +130,7 @@ bool Win32InitAudio(Win32Audio* winAudio, uint64 bufferSizeMilliseconds)
     
     REFERENCE_TIME bufferSizeRefTimes = REFERENCE_TIMES_PER_MILLISECOND
         * bufferSizeMilliseconds;
-    hr = audioClient->Initialize(
-                                 AUDCLNT_SHAREMODE_SHARED,
-                                 0,
-                                 bufferSizeRefTimes,
-                                 0,
-                                 format,
-                                 NULL
-                                 );
+    hr = audioClient->Initialize(AUDCLNT_SHAREMODE_SHARED, 0, bufferSizeRefTimes, 0, format, NULL);
     if (FAILED(hr)) {
         LOG_ERROR("Failed to initialize audio client\n");
         return false;
@@ -154,16 +144,14 @@ bool Win32InitAudio(Win32Audio* winAudio, uint64 bufferSizeMilliseconds)
     }
     
     IAudioRenderClient* renderClient;
-    hr = audioClient->GetService(__uuidof(IAudioRenderClient),
-                                 (void**)&renderClient);
+    hr = audioClient->GetService(__uuidof(IAudioRenderClient), (void**)&renderClient);
     if (FAILED(hr)) {
         LOG_ERROR("Failed to get audio render client\n");
         return false;
     }
     
     IAudioClock* audioClock;
-    hr = audioClient->GetService(__uuidof(IAudioClock),
-                                 (void**)&audioClock);
+    hr = audioClient->GetService(__uuidof(IAudioClock), (void**)&audioClock);
     if (FAILED(hr)) {
         LOG_ERROR("Failed to get audio clock\n");
         return false;
@@ -204,8 +192,7 @@ bool Win32InitAudio(Win32Audio* winAudio, uint64 bufferSizeMilliseconds)
         int midiInDeviceID = 0;
         MMRESULT res;
         MIDIINCAPS midiInCaps;
-        res = midiInGetDevCaps(midiInDeviceID,
-                               &midiInCaps, sizeof(MIDIINCAPS));
+        res = midiInGetDevCaps(midiInDeviceID, &midiInCaps, sizeof(MIDIINCAPS));
         if (res != MMSYSERR_NOERROR) {
             LOG_WARN("Couldn't get MIDI input device caps\n");
             return true;
@@ -213,8 +200,7 @@ bool Win32InitAudio(Win32Audio* winAudio, uint64 bufferSizeMilliseconds)
         
         LOG_INFO("MIDI input device: %s\n", midiInCaps.szPname);
         HMIDIIN midiInHandle;
-        res = midiInOpen(&midiInHandle, midiInDeviceID,
-                         (DWORD_PTR)MidiInputCallback, (DWORD_PTR)winAudio,
+        res = midiInOpen(&midiInHandle, midiInDeviceID, (DWORD_PTR)MidiInputCallback, (DWORD_PTR)winAudio,
                          CALLBACK_FUNCTION);
         if (res != MMSYSERR_NOERROR) {
             LOG_WARN("Couldn't open MIDI input\n");
@@ -252,23 +238,19 @@ void Win32StopAudio(Win32Audio* winAudio)
     winAudio->audioClient->Stop();
 }
 
-void Win32WriteAudioSamples(const Win32Audio* winAudio,
-                            const GameAudio* gameAudio, uint64 numSamples)
+void Win32WriteAudioSamples(const Win32Audio* winAudio, const GameAudio* gameAudio, uint64 numSamples)
 {
     DEBUG_ASSERT(numSamples <= winAudio->bufferSizeSamples);
     
     BYTE* audioBuffer;
-    HRESULT hr = winAudio->renderClient->GetBuffer((UINT32)numSamples,
-                                                   &audioBuffer);
+    HRESULT hr = winAudio->renderClient->GetBuffer((UINT32)numSamples, &audioBuffer);
     if (SUCCEEDED(hr)) {
         switch (winAudio->format) {
             case AUDIO_FORMAT_PCM_FLOAT32: {
                 float32* winBuffer = (float32*)audioBuffer;
                 for (uint64 i = 0; i < numSamples; i++) {
-                    winBuffer[i * winAudio->channels] =
-                        gameAudio->buffer[i * gameAudio->channels];
-                    winBuffer[i * winAudio->channels + 1] =
-                        gameAudio->buffer[i * gameAudio->channels + 1];
+                    winBuffer[i * winAudio->channels]     = gameAudio->buffer[i * gameAudio->channels];
+                    winBuffer[i * winAudio->channels + 1] = gameAudio->buffer[i * gameAudio->channels + 1];
                 }
                 // Probably this is more efficient & worth checking for?
                 /*if (gameAudio->sampleRate == winAudio->sampleRate
@@ -281,15 +263,14 @@ void Win32WriteAudioSamples(const Win32Audio* winAudio,
             case AUDIO_FORMAT_PCM_INT16: {
                 int16* winBuffer = (int16*)audioBuffer;
                 for (uint64 i = 0; i < numSamples; i++) {
-                    winBuffer[i * winAudio->channels] = (int16)(
-                                                                INT16_MAXVAL *
+                    winBuffer[i * winAudio->channels] = (int16)(INT16_MAXVAL *
                                                                 gameAudio->buffer[i * gameAudio->channels]);
-                    winBuffer[i * winAudio->channels + 1] = (int16)(
-                                                                    INT16_MAXVAL *
+                    winBuffer[i * winAudio->channels + 1] = (int16)(INT16_MAXVAL *
                                                                     gameAudio->buffer[i * gameAudio->channels + 1]);
                 }
             } break;
         }
+        
         winAudio->renderClient->ReleaseBuffer((UINT32)numSamples, 0);
     }
 }

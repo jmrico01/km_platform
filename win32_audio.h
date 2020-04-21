@@ -29,7 +29,7 @@ struct Win32Audio
     uint64 latency;
     
 #ifdef APP_315K
-    bool32 midiInBusy;
+    bool midiInBusy;
     MidiInput midiIn;
 #endif
 };
@@ -37,5 +37,4 @@ struct Win32Audio
 bool Win32InitAudio(Win32Audio* winAudio, uint64 bufferSizeMilliseconds);
 void Win32StopAudio(Win32Audio* winAudio);
 
-void Win32WriteAudioSamples(const Win32Audio* winAudio,
-                            const GameAudio* gameAudio, uint64 numSamples);
+void Win32WriteAudioSamples(const Win32Audio* winAudio, const GameAudio* gameAudio, uint64 numSamples);
