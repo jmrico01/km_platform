@@ -111,60 +111,12 @@ internal void Win32ToggleFullscreen(HWND hWnd, OpenGLFunctions* glFuncs)
     }
 }
 
-internal void RemoveFileNameFromPath(const char* filePath, char* dest, uint64 destLength)
-{
-    unsigned int lastSlash = 0;
-    // TODO confused... some cross-platform code inside a win32 file
-    //  maybe I meant to pull this out sometime?
-#ifdef _WIN32
-    char pathSep = '\\';
-#else
-    char pathSep = '/';
-#endif
-    while (filePath[lastSlash] != '\0') {
-        lastSlash++;
-    }
-    // TODO unsafe!
-    while (filePath[lastSlash] != pathSep) {
-        lastSlash--;
-    }
-    if (lastSlash + 2 > destLength) {
-        return;
-    }
-    for (unsigned int i = 0; i < lastSlash + 1; i++) {
-        dest[i] = filePath[i];
-    }
-    dest[lastSlash + 1] = '\0';
-}
-
-internal void Win32GetExeFilePath(Win32State* state)
-{
-    DWORD size = GetModuleFileName(NULL,
-                                   state->exeFilePath, sizeof(state->exeFilePath));
-    if (size == 0) {
-        LOG_ERROR("Failed to get EXE file path\n");
-    }
-    state->exeOnePastLastSlash = state->exeFilePath;
-    for (char* scan = state->exeFilePath; *scan; scan++) {
-        if (*scan == '\\') {
-            state->exeOnePastLastSlash = scan + 1;
-        }
-    }
-}
-internal void Win32BuildExePathFileName(Win32State* state, const char* fileName, int destCount, char* dest)
-{
-    CatStrings(state->exeOnePastLastSlash - state->exeFilePath,
-               state->exeFilePath, StringLength(fileName), fileName,
-               destCount, dest);
-}
-
-internal void Win32GetInputFileLocation(
-                                        Win32State* state, bool inputStream,
+internal void Win32GetInputFileLocation(Win32State* state, bool inputStream,
                                         int slotIndex, int destCount, char* dest)
 {
     char temp[64];
     stbsp_snprintf(temp, 64, "recording_%d_%s.kmi", slotIndex, inputStream ? "input" : "state");
-    Win32BuildExePathFileName(state, temp, destCount, dest);
+    // TODO Win32BuildExePathFileName(state, temp, destCount, dest);
 }
 
 void LogString(const char* string, uint64 n)
@@ -569,8 +521,7 @@ LOG_ERROR("OpenGL function load failed: %s", #name); \
 } \
 }
 
-internal bool Win32LoadBaseGLFunctions(
-                                       OpenGLFunctions* glFuncs, const HMODULE& oglLib)
+internal bool Win32LoadBaseGLFunctions(OpenGLFunctions* glFuncs, const HMODULE& oglLib)
 {
     // Generate function loading code
 #define FUNC(returntype, name, ...) LOAD_GL_FUNCTION(name);
@@ -713,19 +664,18 @@ internal HWND Win32CreateWindow(HINSTANCE hInstance, const char* className, cons
     wndClass.lpszClassName = className;
     
     if (!RegisterClassEx(&wndClass)) {
-        // TODO log
+        LOG_ERROR("RegisterClassEx call failed\n");
         return NULL;
     }
     
-    RECT windowRect     = {};
-    windowRect.left     = x;
-    windowRect.top      = y;
-    windowRect.right    = x + clientWidth;
-    windowRect.bottom   = y + clientHeight;
+    RECT windowRect   = {};
+    windowRect.left   = x;
+    windowRect.top    = y;
+    windowRect.right  = x + clientWidth;
+    windowRect.bottom = y + clientHeight;
     
-    if (!AdjustWindowRectEx(&windowRect, WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-                            FALSE, 0)) {
-        // TODO log
+    if (!AdjustWindowRectEx(&windowRect, WS_OVERLAPPEDWINDOW | WS_VISIBLE, FALSE, 0)) {
+        LOG_ERROR("AdjustWindowRectEx call failed\n");
         GetLastError();
         return NULL;
     }
@@ -737,7 +687,7 @@ internal HWND Win32CreateWindow(HINSTANCE hInstance, const char* className, cons
                                   0, 0, hInstance, 0);
     
     if (!hWindow) {
-        // TODO log
+        LOG_ERROR("CreateWindowEx call failed\n");
         return NULL;
     }
     
@@ -754,8 +704,7 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR cmdline, in
                            systemTime.wHour, systemTime.wMinute, systemTime.wSecond);
     logFilePath_.size += n;
     
-    LogState* logState = (LogState*)VirtualAlloc(0, sizeof(LogState),
-                                                 MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+    LogState* logState = (LogState*)VirtualAlloc(0, sizeof(LogState), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
     if (!logState) {
         LOG_ERROR("Log state memory allocation failed\n");
         PlatformFlushLogs(logState);
@@ -764,11 +713,6 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR cmdline, in
     logState->eventFirst = 0;
     logState->eventCount = 0;
     logState_ = logState;
-    
-    Win32State state = {};
-    Win32GetExeFilePath(&state);
-    RemoveFileNameFromPath(state.exeFilePath, pathToApp_, PATH_MAX_LENGTH);
-    LOG_INFO("Path to executable: %s\n", pathToApp_);
     
     Win32LoadXInput();
     
@@ -861,8 +805,7 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR cmdline, in
     gameMemory.permanent.size = PERMANENT_MEMORY_SIZE;
     gameMemory.transient.size = TRANSIENT_MEMORY_SIZE;
     
-    // TODO Look into using large virtual pages for this
-    // potentially big allocation
+    // TODO Look into using large virtual pages for this potentially big allocation
     uint64 totalSize = gameMemory.permanent.size + gameMemory.transient.size;
     // TODO check allocation fail?
     gameMemory.permanent.memory = VirtualAlloc(baseAddress, (size_t)totalSize,
@@ -875,6 +818,7 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInst, LPSTR cmdline, in
     gameMemory.transient.memory = ((uint8*)gameMemory.permanent.memory +
                                    gameMemory.permanent.size);
     
+    Win32State state = {};
     state.gameMemorySize = totalSize;
     state.gameMemoryBlock = gameMemory.permanent.memory;
     LOG_INFO("Initialized game memory\n");
