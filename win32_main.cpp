@@ -133,6 +133,7 @@ void LogString(const char* string, uint64 n)
         MemCopy(buffer, string, copySize);
         buffer[copySize] = '\0';
         OutputDebugString(buffer);
+        printf("%s", buffer);
         remaining -= copySize;
     }
 #endif
@@ -161,6 +162,10 @@ void PlatformFlushLogs(LogState* logState)
             LogString(logState->buffer + bufferStart, LOG_BUFFER_SIZE - bufferStart);
             LogString(logState->buffer, bufferEnd);
         }
+    }
+    
+    if (logState->eventCount > 0) {
+        fflush(stdout);
     }
     
     logState->eventFirst = (logState->eventFirst + logState->eventCount) % LOG_EVENTS_MAX;

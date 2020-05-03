@@ -45,8 +45,7 @@ void CALLBACK MidiInputCallback(HMIDIIN hMidiIn, UINT wMsg,
 
 bool Win32InitAudio(Win32Audio* winAudio, uint64 bufferSizeMilliseconds)
 {
-    // TODO release/CoTaskMemFree on failure
-    // and in general
+    // TODO release/CoTaskMemFree on failure and in general
     HRESULT hr;
     
     IMMDeviceEnumerator* deviceEnumerator;
